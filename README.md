@@ -45,6 +45,20 @@ On your client
 ss-local -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "tls;host=mydomain.me"
 ```
 
+### Shadowsocks over websocket (HTTP2)
+
+On your server
+
+```sh
+ss-server -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "server;tls;mode=http;host=mydomain.me"
+```
+
+On your client
+
+```sh
+ss-local -c config.json -p 443 --plugin v2ray-plugin --plugin-opts "tls;mode=http;host=mydomain.me"
+```
+
 ### Shadowsocks over quic
 
 On your server

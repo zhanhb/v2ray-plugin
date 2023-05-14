@@ -29,6 +29,7 @@ import (
 	"github.com/v2fly/v2ray-core/v4/proxy/dokodemo"
 	"github.com/v2fly/v2ray-core/v4/proxy/freedom"
 	"github.com/v2fly/v2ray-core/v4/transport/internet"
+	"github.com/v2fly/v2ray-core/v4/transport/internet/http"
 	"github.com/v2fly/v2ray-core/v4/transport/internet/quic"
 	"github.com/v2fly/v2ray-core/v4/transport/internet/tls"
 	"github.com/v2fly/v2ray-core/v4/transport/internet/websocket"
@@ -49,7 +50,7 @@ var (
 	cert       = flag.String("cert", "", "Path to TLS certificate file. Overrides certRaw. Default: ~/.acme.sh/{host}/fullchain.cer")
 	certRaw    = flag.String("certRaw", "", "Raw TLS certificate content. Intended only for Android.")
 	key        = flag.String("key", "", "(server) Path to TLS key file. Default: ~/.acme.sh/{host}/{host}.key")
-	mode       = flag.String("mode", "websocket", "Transport mode: websocket, quic (enforced tls).")
+	mode       = flag.String("mode", "websocket", "Transport mode: websocket, quic (enforced tls), http (enforced tls on client side).")
 	mux        = flag.Int("mux", 1, "Concurrent multiplexed connections (websocket client mode only).")
 	server     = flag.Bool("server", false, "Run in server mode")
 	logLevel   = flag.String("loglevel", "", "loglevel for v2ray: debug, info, warning (default), error, none.")
@@ -125,6 +126,21 @@ func generateConfig() (*core.Config, error) {
 	var transportSettings proto.Message
 	var connectionReuse bool
 	switch *mode {
+	case "http":
+		transportSettings = &http.Config{
+			Host: []string{*host},
+			Path: *path,
+		}
+		if *mux != 0 {
+			connectionReuse = true
+		}
+		if !*tlsEnabled {
+			if *server {
+				newError("tls not enabled, can only be used behind a web reverse proxy").AtInfo().WriteToLog()
+			} else {
+				*tlsEnabled = true
+			}
+		}
 	case "websocket":
 		transportSettings = &websocket.Config{
 			Path: *path,
