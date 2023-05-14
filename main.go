@@ -19,6 +19,7 @@ import (
 	core "github.com/v2fly/v2ray-core/v4"
 	vlog "github.com/v2fly/v2ray-core/v4/app/log"
 	clog "github.com/v2fly/v2ray-core/v4/common/log"
+	httpHeaders "github.com/v2fly/v2ray-core/v4/transport/internet/headers/http"
 
 	"github.com/v2fly/v2ray-core/v4/app/dispatcher"
 	"github.com/v2fly/v2ray-core/v4/app/proxyman"
@@ -130,6 +131,9 @@ func generateConfig() (*core.Config, error) {
 		transportSettings = &http.Config{
 			Host: []string{*host},
 			Path: *path,
+			Header: []*httpHeaders.Header{{
+				Name: "Host", Value: []string{*host},
+			}},
 		}
 		if *mux != 0 {
 			connectionReuse = true
@@ -142,11 +146,13 @@ func generateConfig() (*core.Config, error) {
 			}
 		}
 	case "websocket":
-		transportSettings = &websocket.Config{
-			Path: *path,
-			Header: []*websocket.Header{
-				{Key: "Host", Value: *host},
-			},
+		if *server {
+			transportSettings = &websocket.Config{Path: *path}
+		} else {
+			transportSettings = &websocket.Config{
+				Path:   *path,
+				Header: []*websocket.Header{{Key: "Host", Value: *host}},
+			}
 		}
 		if *mux != 0 {
 			connectionReuse = true
@@ -173,7 +179,7 @@ func generateConfig() (*core.Config, error) {
 			socketConfig.Tfo = internet.SocketConfig_Enable
 		}
 		if *fwmark != 0 {
-			socketConfig.Mark = int32(*fwmark)
+			socketConfig.Mark = uint32(*fwmark)
 		}
 
 		streamConfig.SocketSettings = socketConfig
